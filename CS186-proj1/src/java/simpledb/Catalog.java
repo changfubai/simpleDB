@@ -4,7 +4,12 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.UUID;
 
 /**
  * The Catalog keeps track of all available tables in the database and their
@@ -15,6 +20,7 @@ import java.util.*;
  */
 
 public class Catalog {
+    private Map<Integer, TableHelper> catalogs;
 
     /**
      * Constructor.
@@ -22,6 +28,7 @@ public class Catalog {
      */
     public Catalog() {
         // some code goes here
+        catalogs = new HashMap<>();
     }
 
     /**
@@ -35,6 +42,8 @@ public class Catalog {
      */
     public void addTable(DbFile file, String name, String pkeyField) {
         // some code goes here
+        TableHelper tableHelper = new TableHelper(file, name, pkeyField);
+        catalogs.put(file.getId(), tableHelper);
     }
 
     public void addTable(DbFile file, String name) {
@@ -58,7 +67,12 @@ public class Catalog {
      */
     public int getTableId(String name) throws NoSuchElementException {
         // some code goes here
-        return 0;
+        return catalogs.values()
+                .stream()
+                .filter(tableHelper -> tableHelper.getName().equals(name))
+                .findFirst()
+                .orElseThrow(() -> new NoSuchElementException("no such name: [" + name + "]"))
+                .getId();
     }
 
     /**
@@ -69,7 +83,8 @@ public class Catalog {
      */
     public TupleDesc getTupleDesc(int tableid) throws NoSuchElementException {
         // some code goes here
-        return null;
+        checkTableId(tableid);
+        return catalogs.get(tableid).getTupleDesc();
     }
 
     /**
@@ -80,39 +95,49 @@ public class Catalog {
      */
     public DbFile getDbFile(int tableid) throws NoSuchElementException {
         // some code goes here
-        return null;
+        checkTableId(tableid);
+        return catalogs.get(tableid).getFile();
+    }
+
+    private void checkTableId(int tableId) {
+        if (!catalogs.containsKey(tableId)) {
+            throw new NoSuchElementException("no such tableId:[" + tableId + "]");
+        }
     }
 
     public String getPrimaryKey(int tableid) {
         // some code goes here
-        return null;
+        checkTableId(tableid);
+        return catalogs.get(tableid).getPkField();
     }
 
     public Iterator<Integer> tableIdIterator() {
         // some code goes here
-        return null;
+        return catalogs.keySet().iterator();
     }
 
     public String getTableName(int id) {
         // some code goes here
-        return null;
+        checkTableId(id);
+        return catalogs.get(id).getName();
     }
-    
+
     /** Delete all tables from the catalog */
     public void clear() {
         // some code goes here
+        catalogs.clear();
     }
-    
+
     /**
      * Reads the schema from a file and creates the appropriate tables in the database.
      * @param catalogFile
      */
     public void loadSchema(String catalogFile) {
         String line = "";
-        String baseFolder=new File(catalogFile).getParent();
+        String baseFolder = new File(catalogFile).getParent();
         try {
             BufferedReader br = new BufferedReader(new FileReader(new File(catalogFile)));
-            
+
             while ((line = br.readLine()) != null) {
                 //assume line is of the format name (field type, field type, ...)
                 String name = line.substring(0, line.indexOf("(")).trim();
@@ -125,18 +150,18 @@ public class Catalog {
                 for (String e : els) {
                     String[] els2 = e.trim().split(" ");
                     names.add(els2[0].trim());
-                    if (els2[1].trim().toLowerCase().equals("int"))
+                    if (els2[1].trim().toLowerCase().equals("int")) {
                         types.add(Type.INT_TYPE);
-                    else if (els2[1].trim().toLowerCase().equals("string"))
+                    } else if (els2[1].trim().toLowerCase().equals("string")) {
                         types.add(Type.STRING_TYPE);
-                    else {
+                    } else {
                         System.out.println("Unknown type " + els2[1]);
                         System.exit(0);
                     }
                     if (els2.length == 3) {
-                        if (els2[2].trim().equals("pk"))
+                        if (els2[2].trim().equals("pk")) {
                             primaryKey = els2[0].trim();
-                        else {
+                        } else {
                             System.out.println("Unknown annotation " + els2[2]);
                             System.exit(0);
                         }
@@ -145,16 +170,48 @@ public class Catalog {
                 Type[] typeAr = types.toArray(new Type[0]);
                 String[] namesAr = names.toArray(new String[0]);
                 TupleDesc t = new TupleDesc(typeAr, namesAr);
-                HeapFile tabHf = new HeapFile(new File(baseFolder+"/"+name + ".dat"), t);
-                addTable(tabHf,name,primaryKey);
+                HeapFile tabHf = new HeapFile(new File(baseFolder + "/" + name + ".dat"), t);
+                addTable(tabHf, name, primaryKey);
                 System.out.println("Added table : " + name + " with schema " + t);
             }
         } catch (IOException e) {
             e.printStackTrace();
             System.exit(0);
         } catch (IndexOutOfBoundsException e) {
-            System.out.println ("Invalid catalog entry : " + line);
+            System.out.println("Invalid catalog entry : " + line);
             System.exit(0);
+        }
+    }
+
+    static class TableHelper {
+        private DbFile file;
+        private String name;
+        private String pkField;
+
+        private TableHelper(DbFile file, String name, String pkField) {
+            this.file = file;
+            this.name = name;
+            this.pkField = pkField;
+        }
+
+        public int getId() {
+            return file.getId();
+        }
+
+        public TupleDesc getTupleDesc() {
+            return file.getTupleDesc();
+        }
+
+        public DbFile getFile() {
+            return file;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public String getPkField() {
+            return pkField;
         }
     }
 }
