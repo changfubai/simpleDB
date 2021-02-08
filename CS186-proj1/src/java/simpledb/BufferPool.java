@@ -1,6 +1,6 @@
 package simpledb;
 
-import java.io.*;
+import java.io.IOException;
 
 /**
  * BufferPool manages the reading and writing of pages into memory from
@@ -16,9 +16,11 @@ public class BufferPool {
     public static final int PAGE_SIZE = 4096;
 
     /** Default number of pages passed to the constructor. This is used by
-    other classes. BufferPool should use the numPages argument to the
-    constructor instead. */
+     other classes. BufferPool should use the numPages argument to the
+     constructor instead. */
     public static final int DEFAULT_PAGES = 50;
+
+    private final int maxPages;
 
     /**
      * Creates a BufferPool that caches up to numPages pages.
@@ -27,6 +29,7 @@ public class BufferPool {
      */
     public BufferPool(int numPages) {
         // some code goes here
+        this.maxPages = numPages;
     }
 
     /**
@@ -44,9 +47,15 @@ public class BufferPool {
      * @param pid the ID of the requested page
      * @param perm the requested permissions on the page
      */
-    public  Page getPage(TransactionId tid, PageId pid, Permissions perm)
-        throws TransactionAbortedException, DbException {
+    public Page getPage(TransactionId tid, PageId pid, Permissions perm)
+            throws TransactionAbortedException, DbException {
         // some code goes here
+        // 1.check permission
+        // 2.retrieve lock for transaction
+        // 3.return if page is present
+        // 4.add it if page is not present
+        // 4.1.throw exception if the pool is insufficient
+        // 4.2.return page
         return null;
     }
 
@@ -59,7 +68,7 @@ public class BufferPool {
      * @param tid the ID of the transaction requesting the unlock
      * @param pid the ID of the page to unlock
      */
-    public  void releasePage(TransactionId tid, PageId pid) {
+    public void releasePage(TransactionId tid, PageId pid) {
         // some code goes here
         // not necessary for proj1
     }
@@ -89,7 +98,7 @@ public class BufferPool {
      * @param commit a flag indicating whether we should commit or abort
      */
     public void transactionComplete(TransactionId tid, boolean commit)
-        throws IOException {
+            throws IOException {
         // some code goes here
         // not necessary for proj1
     }
@@ -99,7 +108,7 @@ public class BufferPool {
      * acquire a write lock on the page the tuple is added to(Lock 
      * acquisition is not needed for lab2). May block if the lock cannot 
      * be acquired.
-     * 
+     *
      * Marks any pages that were dirtied by the operation as dirty by calling
      * their markDirty bit, and updates cached versions of any pages that have 
      * been dirtied so that future requests see up-to-date pages. 
@@ -109,7 +118,7 @@ public class BufferPool {
      * @param t the tuple to add
      */
     public void insertTuple(TransactionId tid, int tableId, Tuple t)
-        throws DbException, IOException, TransactionAbortedException {
+            throws DbException, IOException, TransactionAbortedException {
         // some code goes here
         // not necessary for proj1
     }
@@ -127,8 +136,8 @@ public class BufferPool {
      * @param tid the transaction adding the tuple.
      * @param t the tuple to add
      */
-    public  void deleteTuple(TransactionId tid, Tuple t)
-        throws DbException, TransactionAbortedException {
+    public void deleteTuple(TransactionId tid, Tuple t)
+            throws DbException, TransactionAbortedException {
         // some code goes here
         // not necessary for proj1
     }
@@ -145,27 +154,27 @@ public class BufferPool {
     }
 
     /** Remove the specific page id from the buffer pool.
-        Needed by the recovery manager to ensure that the
-        buffer pool doesn't keep a rolled back page in its
-        cache.
-    */
+     Needed by the recovery manager to ensure that the
+     buffer pool doesn't keep a rolled back page in its
+     cache.
+     */
     public synchronized void discardPage(PageId pid) {
         // some code goes here
-	// not necessary for proj1
+        // not necessary for proj1
     }
 
     /**
      * Flushes a certain page to disk
      * @param pid an ID indicating the page to flush
      */
-    private synchronized  void flushPage(PageId pid) throws IOException {
+    private synchronized void flushPage(PageId pid) throws IOException {
         // some code goes here
         // not necessary for proj1
     }
 
     /** Write all pages of the specified transaction to disk.
      */
-    public synchronized  void flushPages(TransactionId tid) throws IOException {
+    public synchronized void flushPages(TransactionId tid) throws IOException {
         // some code goes here
         // not necessary for proj1
     }
@@ -174,7 +183,7 @@ public class BufferPool {
      * Discards a page from the buffer pool.
      * Flushes the page to disk to ensure dirty pages are updated on disk.
      */
-    private synchronized  void evictPage() throws DbException {
+    private synchronized void evictPage() throws DbException {
         // some code goes here
         // not necessary for proj1
     }
